@@ -8,6 +8,7 @@ import type { WorkoutExercise } from '@/lib/types';
 import { useAppStore } from '@/state/AppStore';
 import { useRestTimer } from '@/state/RestTimer';
 import { radius, spacing, useColors } from '@/theme';
+import { HowToSection } from './ExerciseInstructions';
 import { Stepper } from './Stepper';
 import { Button, Card, IconButton } from './ui';
 
@@ -43,6 +44,8 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
         </Pressable>
         <IconButton icon="trash-outline" label="Remove exercise" onPress={() => removeExercise(entry.id)} />
       </View>
+
+      <HowToSection exerciseId={entry.exerciseId} />
 
       <View style={{ gap: spacing.xs }}>
         {entry.sets.map((s, i) => {

@@ -2,6 +2,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ExerciseDemo } from '@/components/ExerciseDemo';
+import { InstructionSteps } from '@/components/ExerciseInstructions';
 import { Button, Card, Chip, EmptyState, SectionTitle } from '@/components/ui';
 import { capitalize } from '@/lib/format';
 import type { Exercise } from '@/lib/types';
@@ -71,13 +72,8 @@ export default function ExerciseDetailsScreen() {
 
         {exercise.instructions.length > 0 && (
           <Card style={{ gap: spacing.sm }}>
-            <SectionTitle>Instructions</SectionTitle>
-            {exercise.instructions.map((step, i) => (
-              <View key={i} style={styles.step}>
-                <Text style={[styles.stepNo, { color: c.primary }]}>{i + 1}</Text>
-                <Text style={{ color: c.text, flex: 1, lineHeight: 21 }}>{step}</Text>
-              </View>
-            ))}
+            <SectionTitle>How to do it</SectionTitle>
+            <InstructionSteps steps={exercise.instructions} />
           </Card>
         )}
       </ScrollView>
@@ -89,6 +85,4 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.lg },
   title: { fontSize: 24, fontWeight: '800' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  step: { flexDirection: 'row', gap: spacing.md },
-  stepNo: { fontWeight: '800', width: 18 },
 });
