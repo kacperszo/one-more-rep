@@ -2,6 +2,16 @@
 
 A mobile app for tracking gym workouts: count reps, browse an exercise catalog, estimate burned calories and time your rest. Built with React Native (Expo + TypeScript). See [docs/project-description.md](docs/project-description.md) for the full project description.
 
+## Screenshots
+
+| Home | Exercise catalog | Exercise details | Active workout |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/home.png" width="200" alt="Home screen" /> | <img src="docs/screenshots/exercises-filter-chest.png" width="200" alt="Exercise catalog filtered by chest" /> | <img src="docs/screenshots/exercise-details.png" width="200" alt="Exercise details" /> | <img src="docs/screenshots/workout.png" width="200" alt="Active workout with rep counter" /> |
+
+| Rest timer | History | Workout details | Profile |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/workout-rest-timer.png" width="200" alt="Rest timer" /> | <img src="docs/screenshots/history.png" width="200" alt="Workout history" /> | <img src="docs/screenshots/history-details.png" width="200" alt="Workout details" /> | <img src="docs/screenshots/profile.png" width="200" alt="Profile" /> |
+
 ## Getting started
 
 ```bash
