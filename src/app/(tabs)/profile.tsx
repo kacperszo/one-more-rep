@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Stepper } from '@/components/Stepper';
-import { Button, Card, Chip, SectionTitle } from '@/components/ui';
+import { Button, Card, Chip, SectionTitle, Toggle } from '@/components/ui';
 import { INTENSITIES, INTENSITY_LABEL, INTENSITY_MET, estimateWorkoutCalories } from '@/lib/calories';
 import { formatCountdown } from '@/lib/format';
 import { refreshExercises } from '@/services/exerciseApi';
 import { useAppStore } from '@/state/AppStore';
+import { flags } from '@/config/features';
 import { radius, spacing, useColors } from '@/theme';
 
 export default function ProfileScreen() {
@@ -17,7 +18,7 @@ export default function ProfileScreen() {
   const toggle = (label: string, value: boolean, onChange: (v: boolean) => void) => (
     <View style={styles.toggle}>
       <Text style={{ color: c.text, fontSize: 16, flex: 1 }}>{label}</Text>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: c.primary, false: c.border }} thumbColor="#FFFFFF" />
+      <Toggle label={label} value={value} onValueChange={onChange} />
     </View>
   );
 
@@ -32,16 +33,19 @@ export default function ProfileScreen() {
           placeholderTextColor={c.muted}
           style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.background }]}
         />
-        <Stepper
-          label="Body weight (kg)"
-          value={profile.weightKg}
-          step={0.5}
-          decimals={1}
-          min={1}
-          onChange={(weightKg) => updateProfile({ weightKg })}
-        />
+        {flags.calories && (
+          <Stepper
+            label="Body weight (kg)"
+            value={profile.weightKg}
+            step={0.5}
+            decimals={1}
+            min={1}
+            onChange={(weightKg) => updateProfile({ weightKg })}
+          />
+        )}
       </Card>
 
+      {flags.calories && (
       <Card style={{ gap: spacing.md }}>
         <SectionTitle>Default intensity</SectionTitle>
         <View style={styles.chips}>
@@ -58,7 +62,9 @@ export default function ProfileScreen() {
           Calories = MET × body weight (kg) × duration (h). At this setting you burn about {hourly} kcal per hour.
         </Text>
       </Card>
+      )}
 
+      {flags.restTimer && (
       <Card style={{ gap: spacing.md }}>
         <SectionTitle>Rest timer</SectionTitle>
         <Stepper
@@ -72,6 +78,7 @@ export default function ProfileScreen() {
         {toggle('Sound', profile.restSound, (restSound) => updateProfile({ restSound }))}
         {toggle('Vibration', profile.restVibration, (restVibration) => updateProfile({ restVibration }))}
       </Card>
+      )}
 
       <Card style={{ gap: spacing.md }}>
         <SectionTitle>Data</SectionTitle>
@@ -96,6 +103,7 @@ export default function ProfileScreen() {
           }}
         />
       </Card>
+
     </ScrollView>
   );
 }

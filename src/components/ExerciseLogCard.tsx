@@ -1,21 +1,23 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { capitalize } from '@/lib/format';
+import { formatSet, lastPerformance, recordSetIds } from '@/lib/records';
 import type { WorkoutExercise } from '@/lib/types';
+import { haptics } from '@/lib/haptics';
 import { useAppStore } from '@/state/AppStore';
+import { flags } from '@/config/features';
 import { useRestTimer } from '@/state/RestTimer';
 import { radius, spacing, useColors } from '@/theme';
 import { HowToSection } from './ExerciseInstructions';
 import { Stepper } from './Stepper';
-import { Button, Card, IconButton } from './ui';
+import { Button, Card, IconButton, RecordBadge } from './ui';
 
 /** One exercise in the active workout: list of sets plus a big rep counter for the selected set. */
 export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
   const c = useColors();
-  const { profile, addSet, updateSet, removeSet, removeExercise } = useAppStore();
+  const { profile, active, workouts, addSet, updateSet, removeSet, removeExercise } = useAppStore();
   const rest = useRestTimer();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -23,18 +25,31 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
     entry.sets.find((s) => s.id === selectedId) ?? entry.sets.find((s) => !s.done) ?? null;
   const selectedIndex = selected ? entry.sets.indexOf(selected) : -1;
 
+  const previous = useMemo(
+    () => (flags.previousPerformance ? lastPerformance(workouts, entry.exerciseId) : []),
+    [workouts, entry.exerciseId],
+  );
+  const records = useMemo(
+    () => (flags.personalRecords && active ? recordSetIds(active, workouts) : new Set<string>()),
+    [active, workouts],
+  );
+
   const complete = () => {
     if (!selected) return;
     updateSet(entry.id, selected.id, { done: true });
     setSelectedId(null);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    if (profile.autoStartRest) rest.start();
+    haptics.success();
+    if (flags.restTimer && profile.autoStartRest) rest.start();
   };
 
   return (
     <Card style={{ gap: spacing.md }}>
       <View style={styles.header}>
-        <Pressable style={{ flex: 1 }} onPress={() => router.push(`/exercise/${encodeURIComponent(entry.exerciseId)}`)}>
+        <Pressable
+          style={{ flex: 1 }}
+          disabled={!flags.exerciseDetails}
+          onPress={() => router.push(`/exercise/${encodeURIComponent(entry.exerciseId)}`)}
+        >
           <Text style={[styles.name, { color: c.text }]}>{capitalize(entry.name)}</Text>
           {(entry.target || entry.equipment) && (
             <Text style={{ color: c.muted, fontSize: 13 }}>
@@ -45,7 +60,13 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
         <IconButton icon="trash-outline" label="Remove exercise" onPress={() => removeExercise(entry.id)} />
       </View>
 
-      <HowToSection exerciseId={entry.exerciseId} />
+      {previous.length > 0 && (
+        <Text style={{ color: c.muted, fontSize: 13 }}>
+          Last time: {previous.map((s) => formatSet(s, flags.weightTracking)).join(' · ')}
+        </Text>
+      )}
+
+      {flags.instructions && <HowToSection exerciseId={entry.exerciseId} />}
 
       <View style={{ gap: spacing.xs }}>
         {entry.sets.map((s, i) => {
@@ -61,8 +82,9 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
             >
               <Text style={[styles.setNo, { color: c.muted }]}>Set {i + 1}</Text>
               <Text style={[styles.setValue, { color: c.text }]}>
-                {s.reps} reps{s.weight > 0 ? ` × ${s.weight} kg` : ''}
+                {s.reps} reps{flags.weightTracking && s.weight > 0 ? ` × ${s.weight} kg` : ''}
               </Text>
+              {records.has(s.id) && <RecordBadge />}
               <Pressable
                 hitSlop={8}
                 accessibilityLabel={s.done ? 'Mark set as not done' : 'Mark set as done'}
@@ -84,13 +106,15 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
         <View style={[styles.editor, { borderColor: c.border }]}>
           <Text style={{ color: c.muted, fontWeight: '700' }}>Set {selectedIndex + 1}</Text>
           <Stepper large label="Reps" value={selected.reps} onChange={(reps) => updateSet(entry.id, selected.id, { reps })} />
-          <Stepper
-            label="Weight (kg)"
-            value={selected.weight}
-            step={2.5}
-            decimals={2}
-            onChange={(weight) => updateSet(entry.id, selected.id, { weight })}
-          />
+          {flags.weightTracking && (
+            <Stepper
+              label="Weight (kg)"
+              value={selected.weight}
+              step={2.5}
+              decimals={2}
+              onChange={(weight) => updateSet(entry.id, selected.id, { weight })}
+            />
+          )}
           {!selected.done && <Button title="Complete set" icon="checkmark" onPress={complete} style={{ alignSelf: 'stretch' }} />}
         </View>
       )}

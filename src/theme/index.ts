@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { flags } from '@/config/features';
 
 const palette = {
   light: {
@@ -29,8 +30,14 @@ const palette = {
 
 export type Colors = typeof palette.light;
 
+/** System color scheme, forced to light when the `darkMode` feature flag is off. */
+export function useScheme(): 'light' | 'dark' {
+  const system = useColorScheme();
+  return flags.darkMode && system === 'dark' ? 'dark' : 'light';
+}
+
 export function useColors(): Colors {
-  return useColorScheme() === 'dark' ? palette.dark : palette.light;
+  return palette[useScheme()];
 }
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;

@@ -1,6 +1,6 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { haptics } from '@/lib/haptics';
 import { radius, useColors } from '@/theme';
 
 type Props = {
@@ -29,7 +29,7 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, decimals = 
   const set = (v: number) => {
     const next = Math.max(min, Number(v.toFixed(decimals)));
     if (next !== value) {
-      Haptics.selectionAsync().catch(() => {});
+      haptics.selection();
       onChange(next);
       setText(String(next));
     }

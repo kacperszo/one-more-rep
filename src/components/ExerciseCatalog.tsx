@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { capitalize } from '@/lib/format';
 import type { Exercise } from '@/lib/types';
 import { getExercises, getFilterOptions, type ExerciseFilters } from '@/services/exerciseApi';
+import { flags } from '@/config/features';
 import { radius, spacing, useColors } from '@/theme';
 import { Button, Chip, EmptyState } from './ui';
 
@@ -12,7 +13,8 @@ type FilterKey = 'bodyPart' | 'muscle' | 'equipment';
 const FILTER_LABEL: Record<FilterKey, string> = { bodyPart: 'Body part', muscle: 'Target muscle', equipment: 'Equipment' };
 
 type Props = {
-  onSelect: (exercise: Exercise) => void;
+  /** Called when a row is tapped. Rows are not tappable when omitted. */
+  onSelect?: (exercise: Exercise) => void;
   /** Shown on each row, e.g. "+" in picker mode. */
   actionIcon?: 'add-circle' | 'chevron-forward';
 };
@@ -20,8 +22,11 @@ type Props = {
 export function ExerciseCatalog({ onSelect, actionIcon = 'chevron-forward' }: Props) {
   const c = useColors();
   const [search, setSearch] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [filters, setFilters] = useState<Omit<ExerciseFilters, 'search'>>({});
+  const [debouncedSearch, setDebounced] = useState('');
+  const [selectedFilters, setFilters] = useState<Omit<ExerciseFilters, 'search'>>({});
+  // Search and filters only apply while their feature flags are on.
+  const debounced = flags.catalogSearch ? debouncedSearch : '';
+  const filters = useMemo(() => (flags.catalogFilters ? selectedFilters : {}), [flags.catalogFilters, selectedFilters]);
   const [openFilter, setOpenFilter] = useState<FilterKey | null>(null);
   const [options, setOptions] = useState<Record<FilterKey, string[]>>({ bodyPart: [], muscle: [], equipment: [] });
 
@@ -91,6 +96,7 @@ export function ExerciseCatalog({ onSelect, actionIcon = 'chevron-forward' }: Pr
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.header}>
+        {flags.catalogSearch && (
         <View style={[styles.search, { backgroundColor: c.card, borderColor: c.border }]}>
           <Ionicons name="search" size={18} color={c.muted} />
           <TextInput
@@ -104,6 +110,8 @@ export function ExerciseCatalog({ onSelect, actionIcon = 'chevron-forward' }: Pr
             clearButtonMode="while-editing"
           />
         </View>
+        )}
+        {flags.catalogFilters && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {(Object.keys(FILTER_LABEL) as FilterKey[]).map((key) => (
             <Chip
@@ -117,7 +125,8 @@ export function ExerciseCatalog({ onSelect, actionIcon = 'chevron-forward' }: Pr
             <Chip label="Clear" onPress={() => setFilters({})} />
           )}
         </ScrollView>
-        {openFilter && (
+        )}
+        {flags.catalogFilters && openFilter && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {options[openFilter].map((v) => (
               <Chip key={v} label={capitalize(v)} selected={filters[openFilter] === v} onPress={() => toggleFilter(openFilter, v)} />
@@ -162,23 +171,26 @@ const ExerciseRow = memo(function ExerciseRow({
   actionIcon,
 }: {
   exercise: Exercise;
-  onPress: (e: Exercise) => void;
+  onPress?: (e: Exercise) => void;
   actionIcon: 'add-circle' | 'chevron-forward';
 }) {
   const c = useColors();
   const meta = [exercise.targetMuscles[0], exercise.equipments[0], exercise.level].filter(Boolean).map((s) => capitalize(s!));
   return (
     <Pressable
-      onPress={() => onPress(exercise)}
+      disabled={!onPress}
+      onPress={() => onPress?.(exercise)}
       style={({ pressed }) => [styles.row, { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.8 : 1 }]}
     >
-      <Image
-        source={exercise.images[0]}
-        style={[styles.thumb, { backgroundColor: c.chip }]}
-        contentFit="cover"
-        cachePolicy="disk"
-        recyclingKey={exercise.id}
-      />
+      {flags.exerciseImages && (
+        <Image
+          source={exercise.images[0]}
+          style={[styles.thumb, { backgroundColor: c.chip }]}
+          contentFit="cover"
+          cachePolicy="disk"
+          recyclingKey={exercise.id}
+        />
+      )}
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[styles.name, { color: c.text }]} numberOfLines={2}>
           {capitalize(exercise.name)}
@@ -187,7 +199,9 @@ const ExerciseRow = memo(function ExerciseRow({
           {meta.join(' · ')}
         </Text>
       </View>
-      <Ionicons name={actionIcon} size={actionIcon === 'add-circle' ? 28 : 20} color={actionIcon === 'add-circle' ? c.primary : c.muted} />
+      {onPress && (
+        <Ionicons name={actionIcon} size={actionIcon === 'add-circle' ? 28 : 20} color={actionIcon === 'add-circle' ? c.primary : c.muted} />
+      )}
     </Pressable>
   );
 });

@@ -59,6 +59,7 @@ npm test
 
 ```
 src/
+  config/features.ts      Feature flags: switch any screen or feature on/off
   app/                    Expo Router screens
     (tabs)/               Workout (home), Exercises, History, Profile
     workout.tsx           Active workout: stopwatch, rep counter, sets, rest timer
@@ -66,7 +67,7 @@ src/
     exercise/[id].tsx     Exercise details
     history/[id].tsx      Finished workout details
   components/             UI components (Stepper, RestTimerBar, ExerciseCatalog, ...)
-  lib/                    Pure logic: types, MET calories, formatting, exercise filtering (+ tests)
+  lib/                    Pure logic: types, MET calories, records, formatting, exercise filtering (+ tests)
   services/
     exerciseApi.ts        The only module that talks to the exercise data source
     storage.ts            AsyncStorage helpers
@@ -74,6 +75,64 @@ src/
     AppStore.tsx          Profile, active workout and history (persisted locally)
     RestTimer.tsx         Rest countdown with sound and vibration
 ```
+
+## Feature flags
+
+Every screen and feature can be switched on or off in code, in one file: [`src/config/features.ts`](src/config/features.ts). Change a value to `false` and that screen or feature is gone from the app.
+
+```ts
+export const FEATURES = {
+  history: true,      // History tab, workout details, "Last workout" card
+  restTimer: true,    // rest countdown between sets
+  calories: false,    // <- no kcal, intensity or body weight anywhere
+  // ...
+};
+```
+
+| Flag | What it controls |
+| --- | --- |
+| `workout` | Active workout screen and exercise picker |
+| `exercises` | Exercises tab (catalog) |
+| `exerciseDetails` | Exercise details screen |
+| `history` | History tab, workout details, "Last workout" card |
+| `profile` | Profile tab |
+| `stopwatch` | Workout time and pause/resume (needs `workout`) |
+| `restTimer` | Rest countdown and its settings (needs `workout`) |
+| `calories` | kcal estimate, intensity, body weight (needs `stopwatch`) |
+| `weightTracking` | Weight per set and volume (needs `workout`) |
+| `previousPerformance` | "Last time" hint and pre-filled sets (needs `workout`) |
+| `personalRecords` | PR badge on record sets (needs `workout`) |
+| `repeatWorkout` | "Repeat workout" button (needs `workout` and `history`) |
+| `instructions` | "How to do it" steps |
+| `exerciseImages` | Thumbnails and demo images |
+| `catalogSearch` | Catalog search box |
+| `catalogFilters` | Body part / muscle / equipment filters |
+| `weeklyStats` | "Last 7 days" card on Home |
+| `haptics` | Haptic feedback on the rep counter |
+| `darkMode` | Follow the system dark theme |
+
+A flag that needs another flag is off whenever its parent is off (see `REQUIRES` in the same file). Disabled screens are not registered with the router, so they can't be opened by navigation or deep links.
+
+Usage:
+
+```tsx
+import { flags } from '@/config/features';
+
+{flags.restTimer && <RestTimerBar />}
+```
+
+To add a flag, add it to `FEATURES` (and to `REQUIRES` if it depends on another flag) and gate the UI with `flags.yourFlag`.
+
+## Progress tracking
+
+<p align="center">
+  <img src="docs/screenshots/workout-last-time-pr.png" width="220" alt="Last time hint and PR badge during a workout" />
+  <img src="docs/screenshots/history-records.png" width="220" alt="Records and Repeat workout in workout details" />
+</p>
+
+- **Last time**: each exercise in a workout shows what you did the previous time, and a newly added exercise starts from those reps and weight.
+- **Personal records**: a set that beats your previous best for that exercise (more weight, or the same weight for more reps) gets a PR badge, live during the workout and in history.
+- **Repeat workout**: start a new workout with the same exercises and sets as a finished one.
 
 ## Exercise data
 

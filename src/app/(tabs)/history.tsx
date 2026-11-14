@@ -6,6 +6,7 @@ import { formatDate, formatDuration, formatTime } from '@/lib/format';
 import type { Workout } from '@/lib/types';
 import { workoutStats } from '@/lib/workout';
 import { useAppStore } from '@/state/AppStore';
+import { flags } from '@/config/features';
 import { radius, spacing, useColors } from '@/theme';
 
 export default function HistoryScreen() {
@@ -37,7 +38,14 @@ function WorkoutRow({ workout }: { workout: Workout }) {
           {formatDate(workout.startedAt)}, {formatTime(workout.startedAt)}
         </Text>
         <Text style={{ color: c.muted, fontSize: 13 }}>
-          {formatDuration(workout.durationMs ?? 0)} · {stats.exercises} exercises · {stats.sets} sets · {workout.calories ?? 0} kcal
+          {[
+            flags.stopwatch && formatDuration(workout.durationMs ?? 0),
+            `${stats.exercises} exercises`,
+            `${stats.sets} sets`,
+            flags.calories && `${workout.calories ?? 0} kcal`,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={c.muted} />

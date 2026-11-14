@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { estimateWorkoutCalories } from '@/lib/calories';
 import { defaultWorkoutName, elapsedMs } from '@/lib/workout';
+import { flags } from '@/config/features';
 import { uid } from '@/lib/format';
+import { lastPerformance } from '@/lib/records';
 import type { Exercise, Profile, Workout, WorkoutExercise, WorkoutSet } from '@/lib/types';
 import { StorageKeys, loadJson, saveJson } from '@/services/storage';
 
@@ -24,6 +26,8 @@ type Store = {
   updateProfile: (patch: Partial<Profile>) => void;
 
   startWorkout: () => void;
+  /** Starts a new workout with the same exercises and sets as a finished one. */
+  repeatWorkout: (source: Workout) => boolean;
   discardWorkout: () => void;
   finishWorkout: () => Workout | null;
   togglePause: () => void;
@@ -92,6 +96,28 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     });
   }, [profile.defaultIntensity]);
 
+  const repeatWorkout = useCallback(
+    (source: Workout): boolean => {
+      if (active) return false;
+      const now = Date.now();
+      setActive({
+        id: uid(),
+        name: source.name,
+        startedAt: now,
+        accumulatedMs: 0,
+        resumedAt: now,
+        intensity: source.intensity,
+        exercises: source.exercises.map((e) => ({
+          ...e,
+          id: uid(),
+          sets: e.sets.map((s) => ({ ...s, id: uid(), done: false })),
+        })),
+      });
+      return true;
+    },
+    [active],
+  );
+
   const discardWorkout = useCallback(() => setActive(null), []);
 
   const finishWorkout = useCallback((): Workout | null => {
@@ -135,6 +161,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const addExercise = useCallback((exercise: Exercise) => {
+    // Start from what was done last time, so only the changes need tapping in.
+    const previous = flags.previousPerformance ? lastPerformance(workouts, exercise.id)[0] : undefined;
     setActive((w) => {
       if (!w) return w;
       const entry: WorkoutExercise = {
@@ -144,11 +172,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         bodyPart: exercise.bodyParts[0],
         target: exercise.targetMuscles[0],
         equipment: exercise.equipments[0],
-        sets: [{ id: uid(), reps: 0, weight: 0, done: false }],
+        sets: [{ id: uid(), reps: previous?.reps ?? 0, weight: previous?.weight ?? 0, done: false }],
       };
       return { ...w, exercises: [...w.exercises, entry] };
     });
-  }, []);
+  }, [workouts]);
 
   const removeExercise = useCallback((weId: string) => {
     setActive((w) => (w ? { ...w, exercises: w.exercises.filter((e) => e.id !== weId) } : w));
@@ -191,6 +219,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       active,
       updateProfile,
       startWorkout,
+      repeatWorkout,
       discardWorkout,
       finishWorkout,
       togglePause,
@@ -209,6 +238,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       active,
       updateProfile,
       startWorkout,
+      repeatWorkout,
       discardWorkout,
       finishWorkout,
       togglePause,

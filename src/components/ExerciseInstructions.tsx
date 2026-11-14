@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Exercise } from '@/lib/types';
 import { getExercise } from '@/services/exerciseApi';
+import { flags } from '@/config/features';
 import { spacing, useColors } from '@/theme';
 import { ExerciseDemo } from './ExerciseDemo';
 
@@ -63,7 +64,7 @@ export function HowToSection({ exerciseId }: { exerciseId: string }) {
           <ActivityIndicator color={c.primary} />
         ) : (
           <>
-            {exercise.images.length > 0 && <ExerciseDemo images={exercise.images} />}
+            {flags.exerciseImages && exercise.images.length > 0 && <ExerciseDemo images={exercise.images} />}
             {exercise.instructions.length > 0 ? (
               <InstructionSteps steps={exercise.instructions} />
             ) : (

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps, ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Switch, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { radius, spacing, useColors } from '@/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -81,6 +81,43 @@ export function Chip({ label, selected, onPress }: { label: string; selected?: b
   );
 }
 
+export function Toggle({
+  value,
+  onValueChange,
+  disabled,
+  label,
+}: {
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+  label?: string;
+}) {
+  const c = useColors();
+  // `activeThumbColor` is a react-native-web prop: without it the thumb is teal on web.
+  const webProps = { activeThumbColor: '#FFFFFF' } as object;
+  return (
+    <Switch
+      accessibilityLabel={label}
+      value={value}
+      disabled={disabled}
+      onValueChange={onValueChange}
+      trackColor={{ true: c.primary, false: c.border }}
+      thumbColor="#FFFFFF"
+      {...webProps}
+    />
+  );
+}
+
+/** Marks a set that beat the previous personal best. */
+export function RecordBadge() {
+  return (
+    <View style={styles.record} accessibilityLabel="Personal record">
+      <Ionicons name="trophy" size={12} color="#8A5A00" />
+      <Text style={styles.recordText}>PR</Text>
+    </View>
+  );
+}
+
 export function SectionTitle({ children }: { children: ReactNode }) {
   const c = useColors();
   return <Text style={[styles.sectionTitle, { color: c.muted }]}>{children}</Text>;
@@ -132,6 +169,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: spacing.sm,
   },
+  record: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFD666',
+    borderRadius: radius.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  recordText: { color: '#8A5A00', fontSize: 11, fontWeight: '800' },
   stat: { alignItems: 'center', flex: 1 },
   statValue: { fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
   empty: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },

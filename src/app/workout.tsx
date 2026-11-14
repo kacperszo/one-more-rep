@@ -9,6 +9,7 @@ import { formatDuration } from '@/lib/format';
 import { useNow } from '@/lib/useNow';
 import { elapsedMs } from '@/lib/workout';
 import { useAppStore } from '@/state/AppStore';
+import { flags } from '@/config/features';
 import { useRestTimer } from '@/state/RestTimer';
 import { spacing, useColors } from '@/theme';
 
@@ -34,7 +35,7 @@ export default function WorkoutScreen() {
     const hasDoneSets = active.exercises.some((e) => e.sets.some((s) => s.done));
     Alert.alert(
       'Finish workout?',
-      hasDoneSets ? 'Your workout will be saved to history.' : 'No sets are marked as done yet. Save anyway?',
+      hasDoneSets ? (flags.history ? 'Your workout will be saved to history.' : 'Your workout will be saved.') : 'No sets are marked as done yet. Save anyway?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -43,7 +44,8 @@ export default function WorkoutScreen() {
             rest.stop();
             finishing.current = true;
             const saved = finishWorkout();
-            if (saved) router.replace(`/history/${saved.id}`);
+            if (saved && flags.history) router.replace(`/history/${saved.id}`);
+            else router.back();
           },
         },
       ],
@@ -79,28 +81,34 @@ export default function WorkoutScreen() {
             placeholder="Workout name"
             placeholderTextColor={c.muted}
           />
-          <View style={styles.clockRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.clock, { color: paused ? c.muted : c.text }]}>{formatDuration(elapsed)}</Text>
-              <Text style={{ color: c.muted }}>
-                ≈ {kcal} kcal · MET {INTENSITY_MET[active.intensity]} · {profile.weightKg} kg
-              </Text>
+          {flags.stopwatch && (
+            <View style={styles.clockRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.clock, { color: paused ? c.muted : c.text }]}>{formatDuration(elapsed)}</Text>
+                {flags.calories && (
+                  <Text style={{ color: c.muted }}>
+                    ≈ {kcal} kcal · MET {INTENSITY_MET[active.intensity]} · {profile.weightKg} kg
+                  </Text>
+                )}
+              </View>
+              <Button
+                title={paused ? 'Resume' : 'Pause'}
+                icon={paused ? 'play' : 'pause'}
+                variant="secondary"
+                onPress={togglePause}
+              />
             </View>
-            <Button
-              title={paused ? 'Resume' : 'Pause'}
-              icon={paused ? 'play' : 'pause'}
-              variant="secondary"
-              onPress={togglePause}
-            />
-          </View>
-          <View style={styles.chips}>
-            {INTENSITIES.map((i) => (
-              <Chip key={i} label={INTENSITY_LABEL[i]} selected={active.intensity === i} onPress={() => updateActive({ intensity: i })} />
-            ))}
-          </View>
+          )}
+          {flags.calories && (
+            <View style={styles.chips}>
+              {INTENSITIES.map((i) => (
+                <Chip key={i} label={INTENSITY_LABEL[i]} selected={active.intensity === i} onPress={() => updateActive({ intensity: i })} />
+              ))}
+            </View>
+          )}
         </Card>
 
-        <RestTimerBar />
+        {flags.restTimer && <RestTimerBar />}
 
         {active.exercises.length === 0 ? (
           <EmptyState icon="barbell-outline" title="No exercises yet" subtitle="Add an exercise from the catalog to start logging sets." />

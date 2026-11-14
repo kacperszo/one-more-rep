@@ -8,6 +8,7 @@ import { capitalize } from '@/lib/format';
 import type { Exercise } from '@/lib/types';
 import { getExercise } from '@/services/exerciseApi';
 import { useAppStore } from '@/state/AppStore';
+import { flags } from '@/config/features';
 import { spacing, useColors } from '@/theme';
 
 export default function ExerciseDetailsScreen() {
@@ -47,10 +48,10 @@ export default function ExerciseDetailsScreen() {
     <>
       <Stack.Screen options={{ title: capitalize(exercise.name) }} />
       <ScrollView contentContainerStyle={styles.container}>
-        {exercise.images.length > 0 && <ExerciseDemo images={exercise.images} />}
+        {flags.exerciseImages && exercise.images.length > 0 && <ExerciseDemo images={exercise.images} />}
         <Text style={[styles.title, { color: c.text }]}>{capitalize(exercise.name)}</Text>
 
-        {active && (
+        {flags.workout && active && (
           <Button
             title="Add to current workout"
             icon="add"
@@ -70,7 +71,7 @@ export default function ExerciseDetailsScreen() {
           {tags('Category', exercise.category ? [exercise.category] : [])}
         </Card>
 
-        {exercise.instructions.length > 0 && (
+        {flags.instructions && exercise.instructions.length > 0 && (
           <Card style={{ gap: spacing.sm }}>
             <SectionTitle>How to do it</SectionTitle>
             <InstructionSteps steps={exercise.instructions} />

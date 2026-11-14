@@ -5,6 +5,7 @@ import { formatDate, formatDuration } from '@/lib/format';
 import { useNow } from '@/lib/useNow';
 import { elapsedMs, workoutStats } from '@/lib/workout';
 import { useAppStore } from '@/state/AppStore';
+import { flags } from '@/config/features';
 import { spacing, useColors } from '@/theme';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -12,7 +13,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 export default function HomeScreen() {
   const c = useColors();
   const { active, workouts, profile, startWorkout } = useAppStore();
-  const now = useNow(1000, active != null);
+  const now = useNow(1000, active != null && flags.stopwatch);
 
   const weekAgo = Date.now() - WEEK_MS;
   const thisWeek = workouts.filter((w) => w.startedAt >= weekAgo);
@@ -26,10 +27,12 @@ export default function HomeScreen() {
         {profile.name ? `Hey ${profile.name}!` : 'Ready for one more rep?'}
       </Text>
 
-      {active ? (
+      {!flags.workout ? null : active ? (
         <Card style={{ gap: spacing.md, borderColor: c.primary, borderWidth: 1 }}>
           <SectionTitle>Workout in progress</SectionTitle>
-          <Text style={[styles.big, { color: c.text }]}>{formatDuration(elapsedMs(active, now))}</Text>
+          {flags.stopwatch && (
+            <Text style={[styles.big, { color: c.text }]}>{formatDuration(elapsedMs(active, now))}</Text>
+          )}
           <Text style={{ color: c.muted }}>
             {active.name} · {active.exercises.length} exercises{active.resumedAt == null ? ' · paused' : ''}
           </Text>
@@ -38,7 +41,9 @@ export default function HomeScreen() {
       ) : (
         <Card style={{ gap: spacing.md }}>
           <SectionTitle>New workout</SectionTitle>
-          <Text style={{ color: c.muted }}>Start the stopwatch, add exercises and count your reps.</Text>
+          <Text style={{ color: c.muted }}>
+            {flags.stopwatch ? 'Start the stopwatch, add exercises and count your reps.' : 'Add exercises and count your reps.'}
+          </Text>
           <Button
             title="Start workout"
             icon="flash"
@@ -50,22 +55,30 @@ export default function HomeScreen() {
         </Card>
       )}
 
-      <Card>
-        <SectionTitle>Last 7 days</SectionTitle>
-        <View style={styles.stats}>
-          <Stat label="Workouts" value={String(thisWeek.length)} />
-          <Stat label="Time" value={formatDuration(weekTime)} />
-          <Stat label="kcal" value={String(weekCalories)} />
-        </View>
-      </Card>
+      {flags.weeklyStats && (
+        <Card>
+          <SectionTitle>Last 7 days</SectionTitle>
+          <View style={styles.stats}>
+            <Stat label="Workouts" value={String(thisWeek.length)} />
+            {flags.stopwatch && <Stat label="Time" value={formatDuration(weekTime)} />}
+            {flags.calories && <Stat label="kcal" value={String(weekCalories)} />}
+          </View>
+        </Card>
+      )}
 
-      {last && (
+      {flags.history && last && (
         <Card style={{ gap: spacing.sm }}>
           <SectionTitle>Last workout</SectionTitle>
           <Text style={[styles.lastTitle, { color: c.text }]}>{last.name}</Text>
           <Text style={{ color: c.muted }}>
-            {formatDate(last.startedAt)} · {formatDuration(last.durationMs ?? 0)} · {workoutStats(last).sets} sets ·{' '}
-            {last.calories ?? 0} kcal
+            {[
+              formatDate(last.startedAt),
+              flags.stopwatch && formatDuration(last.durationMs ?? 0),
+              `${workoutStats(last).sets} sets`,
+              flags.calories && `${last.calories ?? 0} kcal`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </Text>
           <Button title="View details" variant="secondary" onPress={() => router.push(`/history/${last.id}`)} />
         </Card>
