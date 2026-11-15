@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { capitalize } from '@/lib/format';
 import { formatSet, lastPerformance, recordSetIds } from '@/lib/records';
+import { repProfileFor } from '@/lib/repCounter';
+import { useAutoRepCounter } from '@/lib/useAutoRepCounter';
 import type { WorkoutExercise } from '@/lib/types';
 import { haptics } from '@/lib/haptics';
 import { useAppStore } from '@/state/AppStore';
@@ -34,8 +36,24 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
     [active, workouts],
   );
 
+  // Auto-count adds reps to whichever set is selected when a rep is detected.
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  const auto = useAutoRepCounter(() => {
+    const target = selectedRef.current;
+    if (!target || target.done) return;
+    haptics.selection();
+    updateSet(entry.id, target.id, { reps: target.reps + 1 });
+  });
+  const stopAuto = auto.stop;
+  const nothingToCount = !selected || selected.done;
+  useEffect(() => {
+    if (nothingToCount) stopAuto();
+  }, [nothingToCount, stopAuto]);
+
   const complete = () => {
     if (!selected) return;
+    auto.stop();
     updateSet(entry.id, selected.id, { done: true });
     setSelectedId(null);
     haptics.success();
@@ -114,6 +132,21 @@ export function ExerciseLogCard({ entry }: { entry: WorkoutExercise }) {
               decimals={2}
               onChange={(weight) => updateSet(entry.id, selected.id, { weight })}
             />
+          )}
+          {flags.autoRepCounting && auto.available && !selected.done && (
+            <View style={{ alignSelf: 'stretch', gap: spacing.xs }}>
+              <Button
+                title={auto.counting ? 'Stop auto-count' : 'Auto-count reps'}
+                icon={auto.counting ? 'stop-circle-outline' : 'pulse'}
+                variant="secondary"
+                onPress={() => (auto.counting ? auto.stop() : auto.start(repProfileFor(entry.name)))}
+              />
+              {auto.counting && (
+                <Text style={{ color: c.muted, fontSize: 13, textAlign: 'center' }}>
+                  Counting from the motion sensor. Keep the device on your arm and start the set.
+                </Text>
+              )}
+            </View>
           )}
           {!selected.done && <Button title="Complete set" icon="checkmark" onPress={complete} style={{ alignSelf: 'stretch' }} />}
         </View>

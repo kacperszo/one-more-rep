@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+	</array>
+	<key>NSMotionUsageDescription</key>
+	<string>OneMoreRep uses the motion sensor to count your reps.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>OneMoreRep starts a workout session so it can keep counting reps while your wrist is down.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>OneMoreRep starts a workout session so it can keep counting reps while your wrist is down.</string>
+</dict>
+</plist>

@@ -27,7 +27,8 @@
     "plugins": [
       "expo-router",
       "expo-audio",
-      "expo-image"
+      "expo-image",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true

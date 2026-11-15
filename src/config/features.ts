@@ -38,6 +38,8 @@ export const FEATURES = {
   previousPerformance: true,
   /** Trophy on sets that beat your previous best for that exercise. */
   personalRecords: true,
+  /** "Auto-count" button: counts reps from the accelerometer (phone on the arm or in the hand). */
+  autoRepCounting: true,
   /** "Repeat workout" button in workout details. */
   repeatWorkout: true,
 
@@ -71,6 +73,7 @@ export const REQUIRES: Partial<Record<FeatureFlag, FeatureFlag[]>> = {
   weightTracking: ['workout'],
   previousPerformance: ['workout'],
   personalRecords: ['workout'],
+  autoRepCounting: ['workout'],
   repeatWorkout: ['workout', 'history'],
 };
 

@@ -58,6 +58,8 @@ npm test
 ## Project structure
 
 ```
+targets/watch/            Apple Watch app (SwiftUI)
+watch/garmin/             Garmin Connect IQ app (Monkey C)
 src/
   config/features.ts      Feature flags: switch any screen or feature on/off
   app/                    Expo Router screens
@@ -69,6 +71,7 @@ src/
   components/             UI components (Stepper, RestTimerBar, ExerciseCatalog, ...)
   lib/                    Pure logic: types, MET calories, records, formatting, exercise filtering (+ tests)
   services/
+    motion.ts             Accelerometer samples for the rep counter
     exerciseApi.ts        The only module that talks to the exercise data source
     storage.ts            AsyncStorage helpers
   state/
@@ -102,6 +105,7 @@ export const FEATURES = {
 | `weightTracking` | Weight per set and volume (needs `workout`) |
 | `previousPerformance` | "Last time" hint and pre-filled sets (needs `workout`) |
 | `personalRecords` | PR badge on record sets (needs `workout`) |
+| `autoRepCounting` | "Auto-count reps" from the accelerometer (needs `workout`) |
 | `repeatWorkout` | "Repeat workout" button (needs `workout` and `history`) |
 | `instructions` | "How to do it" steps |
 | `exerciseImages` | Thumbnails and demo images |
@@ -133,6 +137,19 @@ To add a flag, add it to `FEATURES` (and to `REQUIRES` if it depends on another 
 - **Last time**: each exercise in a workout shows what you did the previous time, and a newly added exercise starts from those reps and weight.
 - **Personal records**: a set that beats your previous best for that exercise (more weight, or the same weight for more reps) gets a PR badge, live during the workout and in history.
 - **Repeat workout**: start a new workout with the same exercises and sets as a finished one.
+
+## Automatic rep counting (phone and watches)
+
+<p align="center">
+  <img src="docs/screenshots/auto-count.png" width="220" alt="Auto-count reps during a set" />
+</p>
+
+Reps can be counted from the accelerometer instead of tapping: presses, rows, curls and pulldowns, and also pull-ups, dips and push-ups.
+
+- **Phone**: "Auto-count reps" on the current set (flag `autoRepCounting`). The phone has to move with your arm (armband or in the hand).
+- **Apple Watch** (`targets/watch`) and **Garmin** (`watch/garmin`): standalone watch apps with the same algorithm. They have not been compiled or run yet, and they don't sync sets to the phone yet.
+
+The algorithm is tested on simulated movement only, not on real wrists, so manual correction is always available. Details, accuracy numbers, build steps and what is still missing: [watch/README.md](watch/README.md).
 
 ## Exercise data
 
